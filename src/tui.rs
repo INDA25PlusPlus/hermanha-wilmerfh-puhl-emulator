@@ -21,25 +21,9 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(rom: &[u8]) -> Self {
         let mut chip8 = Chip8::new();
-        let rom = vec![
-            // Load immediate value 42 into V0
-            0x60, 0x2A, // LD V0, 42
-            // Load immediate value 10 into V1
-            0x71, 0x0A, // ADD V1, 10
-            // Add V1 to V0
-            0x80, 0x14, // ADD V0, V1
-            // Load immediate value 100 into V2
-            0x62, 0x64, // LD V2, 100
-            // Load V2 into V3
-            0x83, 0x20, // LD V3, V2
-            // XOR V0 and V3
-            0x80, 0x33, // XOR V0, V3
-            // Jump back to start to create an infinite loop
-            0x12, 0x00, // JP 0x200
-        ];
-        chip8.ROM_loader(&rom).expect("Invalid ROM");
+        chip8.ROM_loader(rom).expect("Invalid ROM");
         Self {
             chip8,
             instruction_history: Vec::new(),

@@ -1,6 +1,7 @@
 use std::io;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use std::time::{Duration, Instant};
 
 use ratatui::{
     DefaultTerminal, Frame,
@@ -65,10 +66,18 @@ impl App {
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+        let mut last_timer = Instant::now();
+
         while !self.exit {
             let instruction = OpCode::from_u16(self.chip8.fetch());
             self.add_instruction(instruction);
             self.chip8.execute(instruction).unwrap();
+
+            if last_timer.elapsed() >= Duration::from_micros(16_667) {
+                self.chip8.tick_timers();
+                last_timer = Instant::now();
+            }
+            
             terminal.draw(|frame| self.draw(frame))?;
 
             self.handle_events()?;

@@ -77,7 +77,7 @@ impl App {
                 self.chip8.tick_timers();
                 last_timer = Instant::now();
             }
-            
+
             terminal.draw(|frame| self.draw(frame))?;
 
             self.handle_events()?;
@@ -87,6 +87,7 @@ impl App {
 
     fn handle_events(&mut self) -> io::Result<()> {
         if event::poll(std::time::Duration::from_millis(1))? {
+            self.chip8.keypad = [false; 16];
             match event::read()? {
                 Event::Key(KeyEvent {
                     code: KeyCode::Esc, ..
@@ -100,15 +101,6 @@ impl App {
                 }) => {
                     if let Some(k) = map_key_to_chip8(code) {
                         self.chip8.keypad[k] = true;
-                    }
-                }
-                Event::Key(KeyEvent {
-                    code,
-                    kind: KeyEventKind::Release,
-                    ..
-                }) => {
-                    if let Some(k) = map_key_to_chip8(code) {
-                        self.chip8.keypad[k] = false;
                     }
                 }
                 _ => {}

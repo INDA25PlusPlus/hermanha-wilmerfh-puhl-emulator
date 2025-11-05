@@ -8,7 +8,7 @@ use ratatui::{
     style::Stylize,
     symbols::border,
     text::{Line, Text},
-    widgets::{Block, Padding, Paragraph, Widget},
+    widgets::{Block, Paragraph, Widget},
 };
 
 use crate::chip8::Chip8;

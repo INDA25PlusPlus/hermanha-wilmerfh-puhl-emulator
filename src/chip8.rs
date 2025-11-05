@@ -1,11 +1,14 @@
 use crate::isa::OpCode;
 
-pub struct Chip8 {
-    pub registers: [u8; 16],
-    stack: [u16; 16],
+struct Chip8 {
+    registers: [u8; 16],
     pub i: u16,
     pub pc: u16,
     pub sp: u8,
+    dt: u8,
+    st: u8,
+    fb: [[bool; 32]; 64],
+    stack: [u16; 16],
     memory: [u8; 4096],
 }
 
@@ -18,6 +21,9 @@ impl Chip8 {
             i: 0x000,
             pc: ROM_START,
             sp: 0x00,
+            dt: 0x00,
+            st: 0x00,
+            fb: [[false; 32];64],
             stack: [0x00; 16],
             memory: [0x00; 4096],
         }
@@ -152,18 +158,18 @@ impl Chip8 {
             OpCode::SKNP_vx { x } => {
                 let _ = x;
             }
-            // OpCode::LD_vx_dt { x } => {
-            //     self.registers[x as usize] = self.delay_timer;
-            // }
+            OpCode::LD_vx_dt { x } => {
+                self.registers[x as usize] = self.dt;
+            }
             OpCode::LD_vx_k { x } => {
                 let _ = x;
             }
-            // OpCode::LD_dt_vx { x } => {
-            //     self.delay_timer = self.registers[x as usize];
-            // }
-            // OpCode::LD_st_vx { x } => {
-            //     self.sound_timer = self.registers[x as usize];
-            // }
+            OpCode::LD_dt_vx { x } => {
+                self.dt = self.registers[x as usize];
+            }
+            OpCode::LD_st_vx { x } => {
+                self.st = self.registers[x as usize];
+            }
             OpCode::ADD_I_vx { x } => {
                 self.i = self.i.wrapping_add(self.registers[x as usize] as u16);
             }
@@ -192,7 +198,6 @@ impl Chip8 {
                 }
                 self.i = self.i.wrapping_add(end as u16 + 1);
             }
-            _ => return Err("This doesnt even exist????"),
         }
         Ok(())
     }

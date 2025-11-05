@@ -1,7 +1,7 @@
 use crate::isa::OpCode;
 
-struct Chip8 {
-    registers: [u8; 16],
+pub struct Chip8 {
+    pub registers: [u8; 16],
     i: u16,
     pc: u16,
     sp: u8,

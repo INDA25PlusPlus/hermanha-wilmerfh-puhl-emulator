@@ -1,4 +1,5 @@
 mod chip8;
+mod isa;
 mod tui;
 
 use std::io;

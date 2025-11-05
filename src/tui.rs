@@ -77,17 +77,27 @@ impl App {
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
-        if event::poll(std::time::Duration::from_millis(100))? {
+        if event::poll(std::time::Duration::from_millis(1))? {
             match event::read()? {
-                Event::Key(KeyEvent { code: KeyCode::Esc, .. }) => {
+                Event::Key(KeyEvent {
+                    code: KeyCode::Esc, ..
+                }) => {
                     self.exit = true;
                 }
-                Event::Key(KeyEvent { code, kind: KeyEventKind::Press, .. }) => {
+                Event::Key(KeyEvent {
+                    code,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
                     if let Some(k) = map_key_to_chip8(code) {
                         self.chip8.keypad[k] = true;
                     }
                 }
-                Event::Key(KeyEvent { code, kind: KeyEventKind::Release, .. }) => {
+                Event::Key(KeyEvent {
+                    code,
+                    kind: KeyEventKind::Release,
+                    ..
+                }) => {
                     if let Some(k) = map_key_to_chip8(code) {
                         self.chip8.keypad[k] = false;
                     }
@@ -112,41 +122,50 @@ impl Widget for &App {
         main_block.render(area, buf);
 
         // Layout
-        let layout = Layout::vertical([Constraint::Percentage(40), Constraint::Percentage(60)])
-            .split(inner_area);
+        let horizontal_layout =
+            Layout::horizontal([Constraint::Percentage(80), Constraint::Percentage(20)])
+                .split(inner_area);
+
+        // Display
+        self.render_pixel_display(horizontal_layout[0], buf);
+
+        // Right side layout
+        let right_layout =
+            Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .split(horizontal_layout[1]);
 
         // Registers
         let register_text = Text::from(vec![
             Line::from(format!(
-                "V0: {:02X}  V1: {:02X}  V2: {:02X}  V3: {:02X}",
+                "V0:{:02X} V1:{:02X} V2:{:02X} V3:{:02X}",
                 self.chip8.registers[0],
                 self.chip8.registers[1],
                 self.chip8.registers[2],
                 self.chip8.registers[3]
             )),
             Line::from(format!(
-                "V4: {:02X}  V5: {:02X}  V6: {:02X}  V7: {:02X}",
+                "V4:{:02X} V5:{:02X} V6:{:02X} V7:{:02X}",
                 self.chip8.registers[4],
                 self.chip8.registers[5],
                 self.chip8.registers[6],
                 self.chip8.registers[7]
             )),
             Line::from(format!(
-                "V8: {:02X}  V9: {:02X}  VA: {:02X}  VB: {:02X}",
+                "V8:{:02X} V9:{:02X} VA:{:02X} VB:{:02X}",
                 self.chip8.registers[8],
                 self.chip8.registers[9],
                 self.chip8.registers[10],
                 self.chip8.registers[11]
             )),
             Line::from(format!(
-                "VC: {:02X}  VD: {:02X}  VE: {:02X}  VF: {:02X}",
+                "VC:{:02X} VD:{:02X} VE:{:02X} VF:{:02X}",
                 self.chip8.registers[12],
                 self.chip8.registers[13],
                 self.chip8.registers[14],
                 self.chip8.registers[15]
             )),
             Line::from(format!(
-                "I: {:04X}  PC: {:04X}  SP: {:02X}",
+                "I:{:04X} PC:{:04X} SP:{:02X}",
                 self.chip8.i, self.chip8.pc, self.chip8.sp
             )),
         ]);
@@ -156,7 +175,7 @@ impl Widget for &App {
         let register_paragraph = Paragraph::new(register_text)
             .block(register_block)
             .centered();
-        register_paragraph.render(layout[0], buf);
+        register_paragraph.render(right_layout[0], buf);
 
         // Instruction history
         let history_lines: Vec<Line> = self
@@ -166,10 +185,37 @@ impl Widget for &App {
             .collect();
         let history_text = Text::from(history_lines);
         let history_block = Block::bordered()
-            .title(Line::from(" Instruction History ".bold()).centered())
+            .title(Line::from(" History ".bold()).centered())
             .border_set(border::THICK);
         let history_paragraph = Paragraph::new(history_text).block(history_block).centered();
-        history_paragraph.render(layout[1], buf);
+        history_paragraph.render(right_layout[1], buf);
+    }
+}
+
+impl App {
+    fn render_pixel_display(&self, area: Rect, buf: &mut Buffer) {
+        let pixel_text = self.frame_buffer_to_text();
+        let pixel_block = Block::bordered()
+            .title(Line::from(" Display ".bold()).centered())
+            .border_set(border::THICK);
+        let pixel_paragraph = Paragraph::new(pixel_text).block(pixel_block).centered();
+        pixel_paragraph.render(area, buf);
+    }
+
+    fn frame_buffer_to_text(&self) -> Text {
+        let mut lines = Vec::new();
+        for y in 0..32 {
+            let mut line_chars = String::new();
+            for x in 0..64 {
+                let pixel = if self.chip8.fb[y][x] { '█' } else { '░' };
+                // 2:1 scaling looks better imo
+                line_chars.push(pixel);
+                line_chars.push(pixel);
+            }
+            lines.push(Line::from(line_chars));
+        }
+
+        Text::from(lines)
     }
 }
 

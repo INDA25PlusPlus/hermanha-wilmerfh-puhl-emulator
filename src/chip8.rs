@@ -11,7 +11,7 @@ pub struct Chip8 {
     pub sp: u8,
     dt: u8,
     st: u8,
-    fb: [[bool; W]; H],
+    pub fb: [[bool; W]; H],
     stack: [u16; 16],
     memory: [u8; 4096],
     pub keypad: [bool; 16]

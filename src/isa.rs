@@ -1,3 +1,4 @@
+#[derive(Debug, Clone, Copy)]
 pub enum OpCode {
     Cls,
     Ret,
@@ -36,12 +37,12 @@ pub enum OpCode {
 }
 
 impl OpCode {
-    pub fn from_u16(self: &Self, opcode: u16) -> OpCode {
+    pub fn from_u16(opcode: u16) -> OpCode {
         let opcode_arr: [u8; 4] = [
-            (opcode & 0x0F) as u8,
-            ((opcode >> 4) & 0x0F) as u8,
-            ((opcode >> 8) & 0x0F) as u8,
             ((opcode >> 12) & 0x0F) as u8,
+            ((opcode >> 8) & 0x0F) as u8,
+            ((opcode >> 4) & 0x0F) as u8,
+            (opcode & 0x0F) as u8,
         ];
         match opcode_arr {
             [0x0, 0x0, 0xE, 0x0] => OpCode::Cls,

@@ -1,6 +1,6 @@
 use std::io;
 
-use crossterm::event::{self, Event, KeyEvent, KeyEventKind};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     DefaultTerminal, Frame,
     buffer::Buffer,
@@ -45,12 +45,15 @@ impl App {
             self.chip8.execute(instruction).unwrap();
             terminal.draw(|frame| self.draw(frame))?;
 
-            if event::poll(std::time::Duration::from_millis(100))? {
-                if let Event::Key(KeyEvent {
-                    kind: KeyEventKind::Press,
-                    ..
-                }) = event::read()?
-                {
+            self.handle_events()?;
+        }
+        Ok(())
+    }
+
+    fn handle_events(&mut self) -> io::Result<()> {
+        if event::poll(std::time::Duration::from_millis(100))? {
+            if let Event::Key(key) = event::read()? {
+                if key.code == KeyCode::Char('q') {
                     self.exit = true;
                 }
             }

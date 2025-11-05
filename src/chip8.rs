@@ -3,7 +3,7 @@ struct Chip8 {
     i: u16,
     pc: u16,
     sp: u8,
-    stack: [u16; 16],
+    stack: [u8; 64],
     memory: [u8; 4096],
 }
 
@@ -16,13 +16,13 @@ impl Chip8 {
             i: 0x000, 
             pc: ROM_START,
             sp: 0x00,
-            stack: [0x000; 16],
+            stack: [0x00; 64],
             memory: [0x00; 4096]
         }
     }
 
     pub fn ROM_loader(&mut self, rom: &[u8]) -> Result<(), &'static str> {
-        // takes all the instructions and puts them in memory starts at 0x200 (for some fun reason). all instructions have to be u8.
+        // takes all the instructions and puts them in memory starts at 0x200 (for some fun reason). all instructionsgit .
         let end = ROM_START as usize + rom.len();
         if end > self.memory.len(){
             return Err("Your program is too damn long");

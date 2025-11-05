@@ -1,18 +1,20 @@
 use crate::isa::OpCode;
 
-pub struct Chip8 {
+const ROM_START: u16 = 0x200;
+const W: usize = 64;
+const H: usize = 32;
+
+struct Chip8 {
     pub registers: [u8; 16],
     pub i: u16,
     pub pc: u16,
     pub sp: u8,
     dt: u8,
     st: u8,
-    fb: [[bool; 32]; 64],
+    fb: [[bool; W]; H],
     stack: [u16; 16],
     memory: [u8; 4096],
 }
-
-const ROM_START: u16 = 0x200;
 
 impl Chip8 {
     pub fn new() -> Self {
@@ -23,7 +25,7 @@ impl Chip8 {
             sp: 0x00,
             dt: 0x00,
             st: 0x00,
-            fb: [[false; 32]; 64],
+            fb: [[false; W]; H],
             stack: [0x00; 16],
             memory: [0x00; 4096],
         }
@@ -54,7 +56,9 @@ impl Chip8 {
 
     pub fn execute(&mut self, op: OpCode) -> Result<(), &'static str> {
         match op {
-            OpCode::Cls => {}
+            OpCode::Cls => {
+                self.fb = [[false; W]; H];
+            }
             OpCode::Ret => {
                 self.sp = self.sp.wrapping_sub(1);
                 self.pc = self.stack[self.sp as usize];
@@ -149,8 +153,9 @@ impl Chip8 {
                 self.registers[x as usize] = r & kk;
             }
             OpCode::DRW_x_y_nibble { x, y, n } => {
-                let _ = (x, y, n);
-                self.registers[0xF] = 0;
+                let vx = self.registers[x as usize];
+                let vy = self.registers[y as usize];
+                self.draw_sprite(vx, vy, n);
             }
             OpCode::SKP_vx { x } => {
                 let _ = x;
@@ -201,4 +206,40 @@ impl Chip8 {
         }
         Ok(())
     }
+
+    pub fn draw_sprite(&mut self, vx:u8, vy:u8, n:u8) {
+        self.registers[0xF] = 0;
+        let x0 = vx as usize % W;
+        let y0 = vy as usize % H;
+
+        for row in 0..(n as usize) {
+            let sprite_byte = self.memory[self.i.wrapping_add(row as u16) as usize];
+            let y = (y0 + row) % H;
+
+            for bit in 0..8 {
+                let x = (x0 + bit) % W;
+                let pixel_on = (sprite_byte >> (7-bit)) & 1 == 1;
+
+                if pixel_on {
+                    let prev = self.fb[y][x];
+                    let new = !prev;
+                    self.fb[y][x] = new;
+                    if prev && !new {
+                        self.registers[0xF] = 1;
+                    }
+                }
+            }
+
+        }
+    }
+
+    pub fn tick_timers(&mut self) {
+        if self.dt > 0 {
+            self.dt -= 1;
+        }
+        if self.st > 0 {
+            self.st -= 1;
+        }
+    }
+
 }

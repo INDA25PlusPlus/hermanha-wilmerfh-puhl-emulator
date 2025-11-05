@@ -4,7 +4,7 @@ const ROM_START: u16 = 0x200;
 const W: usize = 64;
 const H: usize = 32;
 
-struct Chip8 {
+pub struct Chip8 {
     pub registers: [u8; 16],
     pub i: u16,
     pub pc: u16,
@@ -14,6 +14,7 @@ struct Chip8 {
     fb: [[bool; W]; H],
     stack: [u16; 16],
     memory: [u8; 4096],
+    pub keypad: [bool; 16]
 }
 
 impl Chip8 {
@@ -28,6 +29,7 @@ impl Chip8 {
             fb: [[false; W]; H],
             stack: [0x00; 16],
             memory: [0x00; 4096],
+            keypad: [false; 16]
         }
     }
 
@@ -158,16 +160,22 @@ impl Chip8 {
                 self.draw_sprite(vx, vy, n);
             }
             OpCode::SKP_vx { x } => {
-                let _ = x;
+                let key = self.registers[x as usize] as usize;
+                if key < 16 && self.keypad[key] { self.skip_next(); }
             }
             OpCode::SKNP_vx { x } => {
-                let _ = x;
+                let key = self.registers[x as usize] as usize;
+                if key < 16 && !self.keypad[key] { self.skip_next(); }
+            }
+            OpCode::LD_vx_k { x } => {
+                if let Some(k) = self.keypad.iter().position(|&pressed| pressed) {
+                    self.registers[x as usize] = k as u8;
+                } else {
+                    self.pc = self.pc.wrapping_sub(2);
+                }
             }
             OpCode::LD_vx_dt { x } => {
                 self.registers[x as usize] = self.dt;
-            }
-            OpCode::LD_vx_k { x } => {
-                let _ = x;
             }
             OpCode::LD_dt_vx { x } => {
                 self.dt = self.registers[x as usize];

@@ -1,6 +1,7 @@
 use std::io;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+
 use ratatui::{
     DefaultTerminal, Frame,
     buffer::Buffer,
@@ -18,6 +19,31 @@ pub struct App {
     chip8: Chip8,
     instruction_history: Vec<OpCode>,
     exit: bool,
+}
+
+fn map_key_to_chip8(code: KeyCode) -> Option<usize> {
+    match code {
+        KeyCode::Char('1') => Some(0x1),
+        KeyCode::Char('2') => Some(0x2),
+        KeyCode::Char('3') => Some(0x3),
+        KeyCode::Char('4') => Some(0xC),
+
+        KeyCode::Char('q') | KeyCode::Char('Q') => Some(0x4),
+        KeyCode::Char('w') | KeyCode::Char('W') => Some(0x5),
+        KeyCode::Char('e') | KeyCode::Char('E') => Some(0x6),
+        KeyCode::Char('r') | KeyCode::Char('R') => Some(0xD),
+
+        KeyCode::Char('a') | KeyCode::Char('A') => Some(0x7),
+        KeyCode::Char('s') | KeyCode::Char('S') => Some(0x8),
+        KeyCode::Char('d') | KeyCode::Char('D') => Some(0x9),
+        KeyCode::Char('f') | KeyCode::Char('F') => Some(0xE),
+
+        KeyCode::Char('z') | KeyCode::Char('Z') => Some(0xA),
+        KeyCode::Char('x') | KeyCode::Char('X') => Some(0x0),
+        KeyCode::Char('c') | KeyCode::Char('C') => Some(0xB),
+        KeyCode::Char('v') | KeyCode::Char('V') => Some(0xF),
+        _ => None,
+    }
 }
 
 impl App {
@@ -52,10 +78,21 @@ impl App {
 
     fn handle_events(&mut self) -> io::Result<()> {
         if event::poll(std::time::Duration::from_millis(100))? {
-            if let Event::Key(key) = event::read()? {
-                if key.code == KeyCode::Char('q') {
+            match event::read()? {
+                Event::Key(KeyEvent { code: KeyCode::Esc, .. }) => {
                     self.exit = true;
                 }
+                Event::Key(KeyEvent { code, kind: KeyEventKind::Press, .. }) => {
+                    if let Some(k) = map_key_to_chip8(code) {
+                        self.chip8.keypad[k] = true;
+                    }
+                }
+                Event::Key(KeyEvent { code, kind: KeyEventKind::Release, .. }) => {
+                    if let Some(k) = map_key_to_chip8(code) {
+                        self.chip8.keypad[k] = false;
+                    }
+                }
+                _ => {}
             }
         }
         Ok(())

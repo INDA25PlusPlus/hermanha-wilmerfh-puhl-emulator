@@ -11,5 +11,5 @@ cargo run -- roms/BREAKOUT
 
 Use debug mode to see registers and instructions (but it lags):
 ```bash
-cargo run -- --degug roms/INVADERS
+cargo run -- --debug roms/INVADERS
 ```

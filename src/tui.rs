@@ -20,6 +20,7 @@ pub struct App {
     chip8: Chip8,
     instruction_history: Vec<OpCode>,
     exit: bool,
+    debug: bool,
 }
 
 fn map_key_to_chip8(code: KeyCode) -> Option<usize> {
@@ -48,13 +49,14 @@ fn map_key_to_chip8(code: KeyCode) -> Option<usize> {
 }
 
 impl App {
-    pub fn new(rom: &[u8]) -> Self {
+    pub fn new(rom: &[u8], debug: bool) -> Self {
         let mut chip8 = Chip8::new();
         chip8.ROM_loader(rom).expect("Invalid ROM");
         Self {
             chip8,
             instruction_history: Vec::new(),
             exit: false,
+            debug,
         }
     }
 
@@ -78,7 +80,17 @@ impl App {
                 last_timer = Instant::now();
             }
 
-            terminal.draw(|frame| self.draw(frame))?;
+            let is_display_instruction =
+                matches!(instruction, OpCode::DRW_x_y_nibble { .. } | OpCode::Cls);
+            if self.debug || is_display_instruction {
+                terminal.draw(|frame| {
+                    if self.debug {
+                        self.draw_debug(frame);
+                    } else {
+                        self.draw_simple(frame);
+                    }
+                })?;
+            }
 
             self.handle_events()?;
         }
@@ -109,8 +121,17 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn draw_debug(&self, frame: &mut Frame) {
         frame.render_widget(self, frame.area());
+    }
+
+    fn draw_simple(&self, frame: &mut Frame) {
+        let main_block = Block::bordered()
+            .title(Line::from(" Chip8 ".bold()).centered())
+            .border_set(border::THICK);
+        let inner_area = main_block.inner(frame.area());
+        main_block.render(frame.area(), frame.buffer_mut());
+        self.render_pixel_display(inner_area, frame.buffer_mut());
     }
 }
 
